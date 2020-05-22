@@ -1,0 +1,108 @@
+#include "protheus.ch"
+#include "json.ch"
+#Include 'RestFul.CH'
+
+/*/{Protheus.doc} OxPreRequisitos
+Objeto de verificacao de atendimento de pre-requisitos tecnicos (fontes, campos, etc ...)
+@type class
+@version 
+@author Abrhaao Ribeiro
+@since 21/04/2020
+/*/
+class OxPreRequisitos
+    private data requisitosTecnicos as array
+    private data msgErro
+    public method Create() CONSTRUCTOR
+    public method ExigeFonte( jsonPrograma )
+    public method ExigeCampo( jsonFields )
+    public method Atende ()
+endclass
+
+method Create() class OxPreRequisitos
+    self:requisitosTecnicos := {}
+return
+
+/*/{Protheus.doc} OxPreRequisitos::ExigeFonte
+Verifica se o repositorio de objetos possui determinado prorama compilado
+@type method
+@version 
+@author Abrhaao Ribeiro
+@since 21/04/2020
+@param jsonPrograma, param_type, param_description
+@return return_type, return_description
+/*/
+method ExigeFonte( jsonPrograma ) class OxPreRequisitos
+    Local nxPrograma 
+    Local joxPrograma := JsonObject():New()
+    joxPrograma:fromJson ( jsonPrograma )
+    
+    For nxPrograma := 1 To Len(jsonPrograma:GetNames())
+        cxPrograma :=  jsonPrograma:GetNames()[nxPrograma] + ".PRW" 
+        axPrograma := GetAPOInfo ( cxPrograma )
+        If axPrograma == Nil
+            cxPrograma :=  jsonPrograma:GetNames()[nxPrograma]  + ".TLPP" 
+            axPrograma := GetAPOInfo ( cxPrograma )
+        EndIf        
+        If axPrograma == Nil
+            Self:msgErro := "Um componente importante para execução desta funcionalidade sistêmica não se encontra aplicado neste ambiente. "
+            Self:msgErro += "Informe, por gentileza, à equipe de sistemas para regularização das atualizações. " + chr(10) + chr(13)
+            Self:msgErro += "Programa: " + cxPrograma + chr(10) + chr(13)
+            Self:msgErro += "Versão Mínima: " + jsonPrograma[jsonPrograma:GetNames()[nxPrograma]] + chr(10) + chr(13)
+        EndIf
+        If axPrograma[4] < CTOD ( jsonPrograma[jsonPrograma:GetNames()[nxPrograma]] )
+            Self:msgErro := "Um componente importante para execução desta funcionalidade sistêmica encontra-se desatualizado. "
+            Self:msgErro += "Informe, por gentileza, à equipe de sistemas para regularização das atualizações. " + chr(10) + chr(13)
+            Self:msgErro += "Programa: " + cxPrograma + chr(10)
+            Self:msgErro += "Versão Mínima: " + jsonPrograma[jsonPrograma:GetNames()[nxPrograma]] + chr(10)
+            Self:msgErro += "Versão Compilada: " + DTOC(axPrograma[4]) + chr(10)
+            Return .F.
+        EndIf
+    Next
+return .T.
+
+/*/{Protheus.doc} OxPreRequisitos::ExigeCampo
+Verifica se o dicionario possui os campos criados
+@type method
+@version 
+@author Abrhaao Ribeiro
+@since 21/04/2020
+@param jsonCampo, param_type, param_description
+@return return_type, return_description
+/*/
+method ExigeCampo( jsonCampo ) class OxPreRequisitos
+    Local joxCampos := JsonObject():New()
+    joxCampos:fromJson ( jsonCampo )
+    
+    For nxTabelas := 1 To Len(jsonCampo:GetNames())
+        cxTabela := jsonCampo:GetNames()[nxTabelas]        
+        ChkFile(cxTabela)
+        For nxFields :=1 To Len ( jsonCampo[cxTabela] )
+            If FieldPos( jsonCampo[cxTabela][nxFields] ) == 0 
+                Self:msgErro := "Um campo de dicionario de dados importante para execução desta funcionalidade sistêmica encontra-se desatualizado. "
+                Self:msgErro += "Informe, por gentileza, à equipe de sistemas para regularização das atualizações. " + chr(10) + chr(13)
+                Self:msgErro += "Tabela: " + cxTabela + chr(10)
+                Self:msgErro += "Campo Esperado: " + jsonCampo[cxTabela][nxFields]  + chr(10)                
+                Return .F.
+            EndIf
+        Next
+    Next
+return .T.
+
+/*/{Protheus.doc} OxPreRequisitos::Atende
+Verifica se as especificacoes determinadas pelo programa origem atendem aos pre-requisitos dela
+@type method
+@version 
+@author Abrhaao Ribeiro
+@since 21/04/2020
+@return return_type, return_description
+/*/
+method Atende() class OxPreRequisitos
+    
+    If !Empty(Self:msgErro)
+        ApMsgInfo ( Self:msgErro, "Validações Katrium" )
+        Return .F.
+    EndIf
+
+return .T.
+
+
