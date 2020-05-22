@@ -36,4 +36,8 @@ User Function Exemplo()
 Return .T.
 ```
 
+Caso o ambiente não atenda aos pré-requisitos estabelecidos como importantes para o funcionamento da rotina, será disparada mensagem de erro.
+
 ![Template](https://raw.githubusercontent.com/abrhaao/protheus-prequisitos/master/validacoes.png)
+
+![Template](https://raw.githubusercontent.com/abrhaao/protheus-prequisitos/master/validacoes-soft.png)
